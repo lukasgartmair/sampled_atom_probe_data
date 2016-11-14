@@ -24,8 +24,7 @@ def createCurveObject():
 
     # Bezier coordinates
     beziers = [
-                ((-0.3138, -0.0000, 0.0024), (-0.3566, -0.2274, -0.6022), (-0.2109, 0.5462, 1.4543))
-                , ((5.8808, -0.0000, 1.7996), (4.5356, 0.0000, 1.3798), (6.2238, -0.0000, 1.9067))
+                (P0,P1,P2), (P3,P4,P5)
               ]
  
     # Create spline and set Bezier control points
@@ -80,4 +79,34 @@ act_obj = bpy.context.active_object
 screw = act_obj.modifiers.new('screw', 'SCREW')
 screw.axis = 'X'
 
+# conversion curve to mesh
 bpy.ops.object.convert(target='MESH', keep_original=False)
+
+# now get the highest x-values from the vector
+# select them and fill them
+
+obj = bpy.context.scene.objects.active # active object
+
+mesh = obj.data
+
+# depends on the orientation
+# in my case the bottom is in positive x direction
+minmax_value = 0
+for vert in mesh.vertices:
+    #print( 'v %f %f %f\n' % (vert.co.x, vert.co.y, vert.co.z) )
+    if vert.co.x > minmax_value:
+        minmax_value = vert.co.x
+    
+print(minmax_value)
+
+# now deselect everything 
+bpy.ops.object.select_all(action='DESELECT') 
+
+#select only the bottom vertices
+for vert in mesh.vertices:
+    if vert.co.x == minmax_value:
+        vert.select = True
+
+bpy.ops.object.editmode_toggle()
+bpy.ops.mesh.edge_face_add()
+
