@@ -14,7 +14,6 @@ def createCurveObject():
 #handle_left <Vector (4.5356, 0.0000, 1.3798)>
 #handle_right <Vector (6.2238, -0.0000, 1.9067)>
 
-
     P0 = (-0.3138, -0.0000, 0.0024)
     P1 = (-0.3566, -0.2274, -0.6022)
     P2 = (-0.2109, 0.5462, 1.4543)
@@ -45,7 +44,6 @@ def createCurveObject():
             
     return ob
 
- 
 curveob = createCurveObject()
 curveob.select = True
 
@@ -77,12 +75,9 @@ if obj.type == 'CURVE':
                 print('handle_left', bezpoint.handle_left)
                 print('handle_right', bezpoint.handle_right)
                 
-
-
 bpy.context.scene.objects.active = curveob
 act_obj = bpy.context.active_object
 screw = act_obj.modifiers.new('screw', 'SCREW')
 screw.axis = 'X'
 
-
-
+bpy.ops.object.convert(target='MESH', keep_original=False)
