@@ -13,6 +13,7 @@ from scipy.spatial import ConvexHull, Delaunay
 from matplotlib.path import Path
 
 def in_hull(p, hull):
+    #http://stackoverflow.com/questions/16750618/whats-an-efficient-way-to-find-if-a-point-lies-in-the-convex-hull-of-a-point-cl
     """
     Test if points in `p` are in `hull`
 
@@ -42,7 +43,8 @@ def generate_rnd_spatial_points(n,hull_minbound, hull_maxbound):
 fig = pl.figure()
 ax = fig.add_subplot(111,projection='3d')
 
-apt = np.genfromtxt('/home/lukas/master_thesis/codes/apt_hull.txt')
+# text file is only the vertices of the blender exported obj
+apt = np.genfromtxt('/home/lukas/sampled_atom_probe_data/apt_hull.txt')
 
 x = apt[:,1]
 y = apt[:,2]
@@ -59,15 +61,20 @@ n = 2000
 rnd_points = np.zeros((n,3))
 rnd_points = generate_rnd_spatial_points(n, convex_hull.min_bound, convex_hull.max_bound)
 
-final_points = np.zeros((n,3))
+posfile = np.zeros((n,3))
 
 inside = np.where(in_hull(rnd_points, convex_hull))
 
-final_points = rnd_points[inside]
+posfile = rnd_points[inside]
 
-ax.scatter(final_points[:,0], final_points[:,1], final_points[:,2])
+ax.scatter(posfile[:,0], posfile[:,1], posfile[:,2])
 for simplex in convex_hull.simplices:
-    ax.plot(points[simplex, 0], points[simplex, 1],points[simplex, 2], 'k-')
+    ax.plot(points[simplex, 0], points[simplex, 1],points[simplex, 2])
 
 pl.show()
 
+mass_to_charge_matrix = 0
+mass_to_charge_precipitation = 1
+
+posfile = np.c_[posfile, np.ones(posfile[:,0].size) ]    
+posfile[:,3] = mass_to_charge_matrix
