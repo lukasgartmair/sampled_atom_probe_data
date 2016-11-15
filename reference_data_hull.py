@@ -47,6 +47,26 @@ def generate_rnd_spatial_points(n, minbound, maxbound):
 
     return rnd_points
         
+def generate_precipitation(center, radius, number_of_atoms):
+
+    minbound_prec = center - np.array((radius,radius,radius))
+    maxbound_prec = center + np.array((radius,radius,radius))
+    
+    prec_cube = generate_rnd_spatial_points(number_of_atoms, minbound_prec, maxbound_prec)
+    
+    # workaround don't get t right now
+    spherical_prec = []
+    for i,p in enumerate(prec_cube):
+        
+        inside = in_sphere(center, radius, p)
+        if inside:
+            spherical_prec.append(i)
+            
+    prec_sphere = prec_cube[spherical_prec]
+    return prec_sphere
+    
+    
+    
 fig = pl.figure()
 ax = fig.add_subplot(111,projection='3d')
 
@@ -90,20 +110,9 @@ number_of_precs = 3
 #shareeditflag
 center_prec1 = np.array((3,0,0))
 radius_prec1 = 0.5
-minbound_prec1 = center_prec1 - np.array((radius_prec1,radius_prec1,radius_prec1))
-maxbound_prec1 = center_prec1 + np.array((radius_prec1,radius_prec1,radius_prec1))
 number_of_atoms_prec1 = 300
-prec1_cube = generate_rnd_spatial_points(number_of_atoms_prec1, minbound_prec1, maxbound_prec1)
 
-# workaround don't get t right now
-spherical_prec = []
-for i,p in enumerate(prec1_cube):
-    
-    inside = in_sphere(center_prec1, radius_prec1, p)
-    if inside:
-        spherical_prec.append(i)
-        
-prec1_sphere = prec1_cube[spherical_prec]
+prec1_sphere = generate_precipitation(center_prec1,radius_prec1, number_of_atoms_prec1)
 
 #ax.scatter(posfile[:,0], posfile[:,1], posfile[:,2])
 ax.scatter(prec1_sphere[:,0], prec1_sphere[:,1], prec1_sphere[:,2], color='red')
