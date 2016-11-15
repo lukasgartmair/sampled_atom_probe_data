@@ -18,6 +18,13 @@ def in_sphere(center, radius, point):
     z = point[2]
     square_dist = ((center[0] - x) ** 2 + (center[1] - y) ** 2 + (center[2] - z) ** 2 )
     return square_dist <= radius ** 2
+    
+def in_shell(center, radius_min, radius_max, point):
+    x = point[0]
+    y = point[1]
+    z = point[2]
+    square_dist = ((center[0] - x) ** 2 + (center[1] - y) ** 2 + (center[2] - z) ** 2 )
+    return ((square_dist <= radius_max ** 2) and (square_dist >= radius_min ** 2))
 
 def in_hull(p, hull):
     #http://stackoverflow.com/questions/16750618/whats-an-efficient-way-to-find-if-a-point-lies-in-the-convex-hull-of-a-point-cl
@@ -31,7 +38,6 @@ def in_hull(p, hull):
     """
     if not isinstance(hull,Delaunay):
         hull = Delaunay(hull.points)
-
     return hull.find_simplex(p)>=0
         
 def generate_rnd_spatial_points(n, minbound, maxbound):
@@ -64,6 +70,28 @@ def generate_precipitation(center, radius, number_of_atoms):
             
     prec_sphere = prec_cube[spherical_prec]
     return prec_sphere
+    
+def generate_uniform_sphere_dist(radius, n):
+
+    # http://stats.stackexchange.com/questions/85488/how-to-generate-random-points-in-the-volume-of-a-sphere-with-uniform-nearest-nei
+    
+    u = np.random.uniform(0,1,n)
+
+    mu, sigma = 0, 1 # mean and standard deviation - variance shoul be on so sqrt(1) = 1
+    x1 = np.random.normal(mu, sigma, n)
+    x2 = np.random.normal(mu, sigma, n)
+    x3 = np.random.normal(mu, sigma, n)
+    
+    x_rnd = (radius* (u**(1./3.))) /(np.sqrt(x1**2 + x2**2 + x3**2)) * x1
+    y_rnd = (radius* (u**(1./3.))) /(np.sqrt(x1**2 + x2**2 + x3**2)) * x2
+    z_rnd = (radius* (u**(1./3.))) /(np.sqrt(x1**2 + x2**2 + x3**2)) * x3
+
+    rnd_points = np.zeros((n,3))
+    rnd_points[:,0] = x_rnd
+    rnd_points[:,1] = y_rnd
+    rnd_points[:,2] = z_rnd
+
+    return rnd_points
     
     
     
@@ -107,19 +135,21 @@ number_of_precs = 3
 #http://stackoverflow.com/questions/5408276/sampling-uniformly-distributed-random-points-inside-a-spherical-volume
 
 #Generate a set of points uniformly distributed within a cube, then discard the ones whose distance from the center exceeds the radius of the desired sphere.
-#shareeditflag
-center_prec1 = np.array((3,0,0))
-radius_prec1 = 0.5
-number_of_atoms_prec1 = 300
 
-prec1_sphere = generate_precipitation(center_prec1,radius_prec1, number_of_atoms_prec1)
+center_prec1 = np.array((3,0,0))
+radius_prec1 = 100
+number_of_atoms_prec1 = 10000
+#prec1_sphere = generate_precipitation(center_prec1,radius_prec1, number_of_atoms_prec1)
+
+prec1_sphere = generate_uniform_sphere_dist(radius_prec1, number_of_atoms_prec1)
+prec1_sphere += (center_prec1/2)
 
 #ax.scatter(posfile[:,0], posfile[:,1], posfile[:,2])
-ax.scatter(prec1_sphere[:,0], prec1_sphere[:,1], prec1_sphere[:,2], color='red')
-for simplex in convex_hull.simplices:
-    ax.plot(points[simplex, 0], points[simplex, 1],points[simplex, 2], 'k-')
-
-pl.show()
+ax.scatter(prec1_sphere[:,0], prec1_sphere[:,1], prec1_sphere[:,2], color='green')
+#for simplex in convex_hull.simplices:
+#    ax.plot(points[simplex, 0], points[simplex, 1],points[simplex, 2], 'k-')
+#
+#pl.show()
 
 
 
