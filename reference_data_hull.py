@@ -13,9 +13,11 @@ from scipy.spatial import ConvexHull, Delaunay
 from matplotlib.path import Path
 
 def in_sphere(center, radius, point):
-    square_dist = ((center[0] - point[0]) ** 2 + (center[1] - point[1]) ** 2 + (center[2] - point[2]) ** 2 )
+    x = point[0]
+    y = point[1]
+    z = point[2]
+    square_dist = ((center[0] - x) ** 2 + (center[1] - y) ** 2 + (center[2] - z) ** 2 )
     return square_dist <= radius ** 2
-
 
 def in_hull(p, hull):
     #http://stackoverflow.com/questions/16750618/whats-an-efficient-way-to-find-if-a-point-lies-in-the-convex-hull-of-a-point-cl
@@ -72,7 +74,6 @@ inside = np.where(in_hull(rnd_points, convex_hull))
 
 posfile = rnd_points[inside]
 
-
 mass_to_charge_matrix = 0
 mass_to_charge_precipitation = 1
 
@@ -88,19 +89,26 @@ number_of_precs = 3
 #Generate a set of points uniformly distributed within a cube, then discard the ones whose distance from the center exceeds the radius of the desired sphere.
 #shareeditflag
 center_prec1 = np.array((3,0,0))
-radius_prec1 = 1
+radius_prec1 = 0.5
 minbound_prec1 = center_prec1 - np.array((radius_prec1,radius_prec1,radius_prec1))
 maxbound_prec1 = center_prec1 + np.array((radius_prec1,radius_prec1,radius_prec1))
 number_of_atoms_prec1 = 300
 prec1_cube = generate_rnd_spatial_points(number_of_atoms_prec1, minbound_prec1, maxbound_prec1)
-spherical_prec = np.where(in_sphere(center_prec1, radius_prec1, prec1_cube))
+
+# workaround don't get t right now
+spherical_prec = []
+for i,p in enumerate(prec1_cube):
+    
+    inside = in_sphere(center_prec1, radius_prec1, p)
+    if inside:
+        spherical_prec.append(i)
+        
 prec1_sphere = prec1_cube[spherical_prec]
 
-
-ax.scatter(posfile[:,0], posfile[:,1], posfile[:,2])
+#ax.scatter(posfile[:,0], posfile[:,1], posfile[:,2])
 ax.scatter(prec1_sphere[:,0], prec1_sphere[:,1], prec1_sphere[:,2], color='red')
 for simplex in convex_hull.simplices:
-    ax.plot(points[simplex, 0], points[simplex, 1],points[simplex, 2])
+    ax.plot(points[simplex, 0], points[simplex, 1],points[simplex, 2], 'k-')
 
 pl.show()
 
