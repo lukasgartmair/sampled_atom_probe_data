@@ -112,7 +112,7 @@ points[:,2] = z
 
 convex_hull = ConvexHull(points)
 
-n = 2000
+n = 1000
 rnd_points = np.zeros((n,3))
 rnd_points = generate_rnd_spatial_points(n, convex_hull.min_bound, convex_hull.max_bound)
 
@@ -136,19 +136,20 @@ number_of_precs = 3
 
 #Generate a set of points uniformly distributed within a cube, then discard the ones whose distance from the center exceeds the radius of the desired sphere.
 
-center_prec1 = np.array((3,0,0))
-radius_prec1 = 100
-number_of_atoms_prec1 = 10000
+#center_prec1 = np.array((1,0,0))
+#radius_prec1 = 0.75
+#number_of_atoms_prec1 = 10000
 #prec1_sphere = generate_precipitation(center_prec1,radius_prec1, number_of_atoms_prec1)
-
-prec1_sphere = generate_uniform_sphere_dist(radius_prec1, number_of_atoms_prec1)
-prec1_sphere += (center_prec1/2)
-
+#
+##prec1_sphere = generate_uniform_sphere_dist(radius_prec1, number_of_atoms_prec1)
+##prec1_sphere += (center_prec1/2)
+#
 #ax.scatter(posfile[:,0], posfile[:,1], posfile[:,2])
-ax.scatter(prec1_sphere[:,0], prec1_sphere[:,1], prec1_sphere[:,2], color='green')
+#ax.scatter(prec1_sphere[:,0], prec1_sphere[:,1], prec1_sphere[:,2], color='red')
 #for simplex in convex_hull.simplices:
 #    ax.plot(points[simplex, 0], points[simplex, 1],points[simplex, 2], 'k-')
-#
+#pl.axis('equal')
+#ax.set_axis_off()
 #pl.show()
 
 
