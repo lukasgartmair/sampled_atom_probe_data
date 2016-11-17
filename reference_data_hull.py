@@ -13,10 +13,8 @@ from scipy.spatial import ConvexHull, Delaunay
 from matplotlib.path import Path
 from scipy.stats import norm
 
-def in_sphere(center, radius, point):
-    x = point[0]
-    y = point[1]
-    z = point[2]
+def in_sphere(center, radius, x, y, z):
+
     square_dist = ((center[0] - x) ** 2 + (center[1] - y) ** 2 + (center[2] - z) ** 2 )
     return square_dist <= radius ** 2
     
@@ -54,50 +52,22 @@ def generate_rnd_spatial_points(n, minbound, maxbound):
 
     return rnd_points
         
-def generate_precipitation(center, radius, number_of_atoms):
+def generate_precipitation(pos, center=(0,0,0), radius=3):
+    
+    mc_matrix = 0
+    mc_prec = 1
 
-    minbound_prec = center - np.array((radius,radius,radius))
-    maxbound_prec = center + np.array((radius,radius,radius))
+    pos = np.c_[pos, np.ones(pos[:,0].size) ]   
     
-    prec_cube = generate_rnd_spatial_points(number_of_atoms, minbound_prec, maxbound_prec)
-    
-    # workaround don't get t right now
-    spherical_prec = []
-    for i,p in enumerate(prec_cube):
+    for i,p in enumerate(pos):
         
-        inside = in_sphere(center, radius, p)
+        inside = in_sphere(center, radius, pos[i,0], pos[i,1], pos[i,2])
         if inside:
-            spherical_prec.append(i)
-            
-    prec_sphere = prec_cube[spherical_prec]
-    return prec_sphere
-    
-def generate_uniform_sphere_dist(radius, n):
+            pos[i,3] = mc_prec
+        else:
+            pos[i,3] = mc_matrix
 
-    # http://stats.stackexchange.com/questions/85488/how-to-generate-random-points-in-the-volume-of-a-sphere-with-uniform-nearest-nei
-    
-    u = np.random.uniform(0,1,n)
-
-    mu, sigma = 0, 1 # mean and standard deviation - variance shoul be on so sqrt(1) = 1
-    x1 = np.random.normal(mu, sigma, n)
-    x2 = np.random.normal(mu, sigma, n)
-    x3 = np.random.normal(mu, sigma, n)
-    
-    x_rnd = (radius* (u**(1./3.))) /(np.sqrt(x1**2 + x2**2 + x3**2)) * x1
-    y_rnd = (radius* (u**(1./3.))) /(np.sqrt(x1**2 + x2**2 + x3**2)) * x2
-    z_rnd = (radius* (u**(1./3.))) /(np.sqrt(x1**2 + x2**2 + x3**2)) * x3
-
-    rnd_points = np.zeros((n,3))
-    rnd_points[:,0] = x_rnd
-    rnd_points[:,1] = y_rnd
-    rnd_points[:,2] = z_rnd
-
-    return rnd_points
-    
-    
-def unique_rows(data):
-    uniq = np.unique(data.view(data.dtype.descr * data.shape[1]))
-    return uniq.view(data.dtype).reshape(-1, data.shape[1])
+    return pos
 
 def sample_prec(pos, size_of_volume):
 
@@ -111,15 +81,6 @@ def sample_prec(pos, size_of_volume):
     rmax = np.sqrt(3* size_of_volume**2) *1.1
     mc_matrix = 0
     mc_prec = 1
-    
-#    # synthesis of position data
-#    numAtom = (sz * 2)**3 * atomDens / scaler
-#    pos = np.random.rand(numAtom,3)
-#    #http://stackoverflow.com/questions/16970982/find-unique-rows-in-numpy-array
-#    pos = unique_rows(pos)
-#    pos = np.array(pos) * sz * 2
-#    pos = pos - sz
-#    pos = pos[pos[:,2].argsort(),]
     
     ## creating reference distribution
     sample = np.random.rand(pos[:,0].size,1);
@@ -165,22 +126,23 @@ ax = fig.add_subplot(111,projection='3d')
 # text file is only the vertices of the blender exported obj
 apt = np.genfromtxt('/home/lukas/sampled_atom_probe_data/scaled_mesh.txt')
 
-x = apt[:,1]
-y = apt[:,2]
-z = apt[:,3]
-
-points = np.zeros((x.size,3))
-points[:,0] = x
-points[:,1] = y
-points[:,2] = z
+points = np.zeros((apt[:,1].size,3))
+points[:,0] = apt[:,1]
+points[:,1] = apt[:,2]
+points[:,2] = apt[:,3]
 
 convex_hull = ConvexHull(points)
 
-n = 10000
-rnd_points = np.zeros((n,3))
-rnd_points = generate_rnd_spatial_points(n, convex_hull.min_bound, convex_hull.max_bound)
+atomic_density = 20 #atoms/nm**3
+# as the mesh is symmetrical take the abs of the smallest maxbounds
+size_of_volume = np.min(convex_hull.max_bound)
 
-posfile = np.zeros((n,3))
+number_of_atoms = int((size_of_volume * 2)**3 * atomic_density)
+
+rnd_points = np.zeros((number_of_atoms,3))
+rnd_points = generate_rnd_spatial_points(number_of_atoms, convex_hull.min_bound, convex_hull.max_bound)
+
+posfile = np.zeros((number_of_atoms,3))
 
 inside = np.where(in_hull(rnd_points, convex_hull))
 
@@ -189,30 +151,25 @@ posfile = rnd_points[inside]
 mass_to_charge_matrix = 0
 mass_to_charge_precipitation = 1
 
-#posfile = np.c_[posfile, np.ones(posfile[:,0].size) ]    
-
 # create spherical precipitations
+#posfile = sample_prec(posfile, size_of_volume)
 
-# as the mesh is symmetrical take the abs of the smallest maxbounds
-size_of_volume = np.min(convex_hull.max_bound)
+posfile = generate_precipitation(posfile, center=(0,0,0), radius=8)
 
-posfile = sample_prec(posfile, size_of_volume)
-
-#
 matrix = posfile[posfile[:,3] == 0]
 prec = posfile[posfile[:,3] == 1]
 
-#n = 10
-#ax.scatter(matrix[::n,0], matrix[::n,1], matrix[::n,2])
-#ax.scatter(prec[:,0], prec[:,1], prec[:,2], color='red')
-#for simplex in convex_hull.simplices:
-#    ax.plot(points[simplex, 0], points[simplex, 1],points[simplex, 2], 'k-')
-#pl.axis('equal')
-#ax.set_axis_off()
-#pl.show()
+n_matrix  = 10000
+n_prec  = 100
+ax.scatter(matrix[::n_matrix,0], matrix[::n_matrix,1], matrix[::n_matrix,2])
+ax.scatter(prec[::n_prec,0], prec[::n_prec,1], prec[::n_prec,2], color='red')
+for simplex in convex_hull.simplices:
+    ax.plot(points[simplex, 0], points[simplex, 1],points[simplex, 2], 'k-')
+pl.axis('equal')
+ax.set_axis_off()
+pl.show()
 
-
-np.savetxt('numpy_output_pos.txt',posfile)
+#np.savetxt('numpy_output_pos.txt',posfile)
 
 
 
