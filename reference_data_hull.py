@@ -99,22 +99,19 @@ def unique_rows(data):
     uniq = np.unique(data.view(data.dtype.descr * data.shape[1]))
     return uniq.view(data.dtype).reshape(-1, data.shape[1])
 
-def sample_prec(pos):
-
+def sample_prec(pos, size_of_volume):
 
     # python adaption of the precipitation sampling from https://github.com/peterfelfer/AtomProbeTutorials    
-    sz = 20
-    precRad = 10
-    precConc = 25
+    # for size of volume take the smallest absolute of the hull
+    precRad = 3
+    precConc = 90
     interfacialExcessL = 25
-    interfacialExcessR = 50
+    interfacialExcessR = 25
     segWidth = 1
-    atomDens = 1
-    rmax = np.sqrt(3* sz**2) *1.1
-    mc1 = 0
-    mc2 = 1
+    rmax = np.sqrt(3* size_of_volume**2) *1.1
+    mc_matrix = 0
+    mc_prec = 1
     
-    scaler = 1000
 #    # synthesis of position data
 #    numAtom = (sz * 2)**3 * atomDens / scaler
 #    pos = np.random.rand(numAtom,3)
@@ -154,8 +151,8 @@ def sample_prec(pos):
     #
     mcPrec = np.arange(precPropVal.size)
     #
-    mcPrec[isSol_indices] = mc2
-    mcPrec[noSol_indices] = mc1
+    mcPrec[isSol_indices] = mc_prec
+    mcPrec[noSol_indices] = mc_matrix
     
     posfile = np.c_[pos, np.ones(pos[:,0].size) ]    
     posfile[:,3] = mcPrec
@@ -166,7 +163,7 @@ fig = pl.figure()
 ax = fig.add_subplot(111,projection='3d')
 
 # text file is only the vertices of the blender exported obj
-apt = np.genfromtxt('/home/lukas/sampled_atom_probe_data/apt_hull.txt')
+apt = np.genfromtxt('/home/lukas/sampled_atom_probe_data/scaled_mesh.txt')
 
 x = apt[:,1]
 y = apt[:,2]
@@ -192,30 +189,21 @@ posfile = rnd_points[inside]
 mass_to_charge_matrix = 0
 mass_to_charge_precipitation = 1
 
-posfile = np.c_[posfile, np.ones(posfile[:,0].size) ]    
-posfile[:,3] = mass_to_charge_matrix
+#posfile = np.c_[posfile, np.ones(posfile[:,0].size) ]    
 
 # create spherical precipitations
-sizes_of_precs = [5,10,20]
-number_of_precs = 3
 
-posfile = sample_prec(posfile)
+# as the mesh is symmetrical take the abs of the smallest maxbounds
+size_of_volume = np.min(convex_hull.max_bound)
 
-#http://stackoverflow.com/questions/5408276/sampling-uniformly-distributed-random-points-inside-a-spherical-volume
+posfile = sample_prec(posfile, size_of_volume)
 
-#Generate a set of points uniformly distributed within a cube, then discard the ones whose distance from the center exceeds the radius of the desired sphere.
-
-#center_prec1 = np.array((1,0,0))
-#radius_prec1 = 0.75
-#number_of_atoms_prec1 = 10000
-#prec1_sphere = generate_precipitation(center_prec1,radius_prec1, number_of_atoms_prec1)
-#
-##prec1_sphere = generate_uniform_sphere_dist(radius_prec1, number_of_atoms_prec1)
-##prec1_sphere += (center_prec1/2)
 #
 matrix = posfile[posfile[:,3] == 0]
 prec = posfile[posfile[:,3] == 1]
-ax.scatter(matrix[:,0], matrix[:,1], matrix[:,2])
+
+n = 10
+ax.scatter(matrix[::n,0], matrix[::n,1], matrix[::n,2])
 ax.scatter(prec[:,0], prec[:,1], prec[:,2], color='red')
 for simplex in convex_hull.simplices:
     ax.plot(points[simplex, 0], points[simplex, 1],points[simplex, 2], 'k-')
@@ -224,9 +212,7 @@ ax.set_axis_off()
 pl.show()
 
 
-
-
-
+np.savetxt('test.pos',posfile)
 
 
 
