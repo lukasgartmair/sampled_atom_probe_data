@@ -11,6 +11,7 @@ import matplotlib.pyplot as pl
 from mpl_toolkits.mplot3d import axes3d
 from scipy.spatial import ConvexHull, Delaunay
 from matplotlib.path import Path
+from scipy.stats import norm
 
 def in_sphere(center, radius, point):
     x = point[0]
@@ -94,6 +95,72 @@ def generate_uniform_sphere_dist(radius, n):
     return rnd_points
     
     
+def unique_rows(data):
+    uniq = np.unique(data.view(data.dtype.descr * data.shape[1]))
+    return uniq.view(data.dtype).reshape(-1, data.shape[1])
+
+def sample_prec(pos):
+
+
+    # python adaption of the precipitation sampling from https://github.com/peterfelfer/AtomProbeTutorials    
+    sz = 20
+    precRad = 10
+    precConc = 25
+    interfacialExcessL = 25
+    interfacialExcessR = 50
+    segWidth = 1
+    atomDens = 1
+    rmax = np.sqrt(3* sz**2) *1.1
+    mc1 = 0
+    mc2 = 1
+    
+    scaler = 1000
+#    # synthesis of position data
+#    numAtom = (sz * 2)**3 * atomDens / scaler
+#    pos = np.random.rand(numAtom,3)
+#    #http://stackoverflow.com/questions/16970982/find-unique-rows-in-numpy-array
+#    pos = unique_rows(pos)
+#    pos = np.array(pos) * sz * 2
+#    pos = pos - sz
+#    pos = pos[pos[:,2].argsort(),]
+    
+    ## creating reference distribution
+    sample = np.random.rand(pos[:,0].size,1);
+    r = np.arange(0,rmax+1,sample[0])
+    concL = np.ones(r.size)
+    concL[r <= precRad] = precConc
+    concR = concL
+    
+    ##normpdf (X,mu,sigma)
+    excess =  norm.pdf(r, precRad, segWidth)
+    #
+    concL = concL + excess * interfacialExcessL
+    concR = concR + excess * interfacialExcessR
+    #
+    ## sampling
+    atomRad = np.sqrt(np.sum(pos**2,1))
+    isL = pos[:,0] < 0
+    #
+    precPropVal = np.zeros(isL.size)
+    #
+    for i,L in enumerate(isL):
+        if L == True:    
+            precPropVal[i] = np.interp(atomRad[i],r,concL/100) # probability of an atom to be solute
+        else:
+            precPropVal[i] = np.interp(atomRad[i], r,concR/100)
+    #
+    isSol_indices = np.where(sample[:,0] < precPropVal)
+    noSol_indices = np.where(sample[:,0] >= precPropVal)
+    #
+    mcPrec = np.arange(precPropVal.size)
+    #
+    mcPrec[isSol_indices] = mc2
+    mcPrec[noSol_indices] = mc1
+    
+    posfile = np.c_[pos, np.ones(pos[:,0].size) ]    
+    posfile[:,3] = mcPrec
+    
+    return posfile
     
 fig = pl.figure()
 ax = fig.add_subplot(111,projection='3d')
@@ -112,7 +179,7 @@ points[:,2] = z
 
 convex_hull = ConvexHull(points)
 
-n = 1000
+n = 10000
 rnd_points = np.zeros((n,3))
 rnd_points = generate_rnd_spatial_points(n, convex_hull.min_bound, convex_hull.max_bound)
 
@@ -132,6 +199,8 @@ posfile[:,3] = mass_to_charge_matrix
 sizes_of_precs = [5,10,20]
 number_of_precs = 3
 
+posfile = sample_prec(posfile)
+
 #http://stackoverflow.com/questions/5408276/sampling-uniformly-distributed-random-points-inside-a-spherical-volume
 
 #Generate a set of points uniformly distributed within a cube, then discard the ones whose distance from the center exceeds the radius of the desired sphere.
@@ -144,13 +213,15 @@ number_of_precs = 3
 ##prec1_sphere = generate_uniform_sphere_dist(radius_prec1, number_of_atoms_prec1)
 ##prec1_sphere += (center_prec1/2)
 #
-#ax.scatter(posfile[:,0], posfile[:,1], posfile[:,2])
-#ax.scatter(prec1_sphere[:,0], prec1_sphere[:,1], prec1_sphere[:,2], color='red')
-#for simplex in convex_hull.simplices:
-#    ax.plot(points[simplex, 0], points[simplex, 1],points[simplex, 2], 'k-')
-#pl.axis('equal')
-#ax.set_axis_off()
-#pl.show()
+matrix = posfile[posfile[:,3] == 0]
+prec = posfile[posfile[:,3] == 1]
+ax.scatter(matrix[:,0], matrix[:,1], matrix[:,2])
+ax.scatter(prec[:,0], prec[:,1], prec[:,2], color='red')
+for simplex in convex_hull.simplices:
+    ax.plot(points[simplex, 0], points[simplex, 1],points[simplex, 2], 'k-')
+pl.axis('equal')
+ax.set_axis_off()
+pl.show()
 
 
 
