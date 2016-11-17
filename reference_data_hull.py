@@ -202,17 +202,17 @@ posfile = sample_prec(posfile, size_of_volume)
 matrix = posfile[posfile[:,3] == 0]
 prec = posfile[posfile[:,3] == 1]
 
-n = 10
-ax.scatter(matrix[::n,0], matrix[::n,1], matrix[::n,2])
-ax.scatter(prec[:,0], prec[:,1], prec[:,2], color='red')
-for simplex in convex_hull.simplices:
-    ax.plot(points[simplex, 0], points[simplex, 1],points[simplex, 2], 'k-')
-pl.axis('equal')
-ax.set_axis_off()
-pl.show()
+#n = 10
+#ax.scatter(matrix[::n,0], matrix[::n,1], matrix[::n,2])
+#ax.scatter(prec[:,0], prec[:,1], prec[:,2], color='red')
+#for simplex in convex_hull.simplices:
+#    ax.plot(points[simplex, 0], points[simplex, 1],points[simplex, 2], 'k-')
+#pl.axis('equal')
+#ax.set_axis_off()
+#pl.show()
 
 
-np.savetxt('test.pos',posfile)
+np.savetxt('numpy_output_pos.txt',posfile)
 
 
 
