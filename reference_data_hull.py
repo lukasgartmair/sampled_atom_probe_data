@@ -53,19 +53,14 @@ def generate_rnd_spatial_points(n, minbound, maxbound):
     return rnd_points
         
 def generate_precipitation(pos, center=(0,0,0), radius=3):
-    
-    mc_matrix = 0
-    mc_prec = 1
 
-    pos = np.c_[pos, np.ones(pos[:,0].size) ]   
+    mc_prec = 1
     
     for i,p in enumerate(pos):
         
         inside = in_sphere(center, radius, pos[i,0], pos[i,1], pos[i,2])
         if inside:
             pos[i,3] = mc_prec
-        else:
-            pos[i,3] = mc_matrix
 
     return pos
 
@@ -114,8 +109,7 @@ def sample_prec(pos, size_of_volume):
     #
     mcPrec[isSol_indices] = mc_prec
     mcPrec[noSol_indices] = mc_matrix
-    
-    posfile = np.c_[pos, np.ones(pos[:,0].size) ]    
+
     posfile[:,3] = mcPrec
     
     return posfile
@@ -133,7 +127,7 @@ points[:,2] = apt[:,3]
 
 convex_hull = ConvexHull(points)
 
-atomic_density = 20 #atoms/nm**3
+atomic_density = 25 #atoms/nm**3
 # as the mesh is symmetrical take the abs of the smallest maxbounds
 size_of_volume = np.min(convex_hull.max_bound)
 
@@ -151,15 +145,23 @@ posfile = rnd_points[inside]
 mass_to_charge_matrix = 0
 mass_to_charge_precipitation = 1
 
+# add  mass to charge column
+
+posfile = np.c_[posfile, np.zeros(posfile[:,0].size) ]   
+
 # create spherical precipitations
+# normally distributed
 #posfile = sample_prec(posfile, size_of_volume)
 
-posfile = generate_precipitation(posfile, center=(0,0,0), radius=8)
+# sharp inside outside
+posfile = generate_precipitation(posfile, center=(0,24,0), radius=6)
+
+posfile = generate_precipitation(posfile, center=(0,8,0), radius=6)
 
 matrix = posfile[posfile[:,3] == 0]
 prec = posfile[posfile[:,3] == 1]
 
-n_matrix  = 10000
+n_matrix  = 5000
 n_prec  = 100
 ax.scatter(matrix[::n_matrix,0], matrix[::n_matrix,1], matrix[::n_matrix,2])
 ax.scatter(prec[::n_prec,0], prec[::n_prec,1], prec[::n_prec,2], color='red')
