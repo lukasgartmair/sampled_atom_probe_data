@@ -163,10 +163,20 @@ def create_distributed_reference_data_set(atomic_density, precRad, precConc, int
 #    pl.axis('equal')
 #    ax.set_axis_off()
 #    pl.show()
-    
-    np.savetxt('distributed_ref_pos_' + 'atomic_density_' + str(atomic_density) + '_precRad_' + 
+
+    filename = str('distributed_ref_pos_' + 'atomic_density_' + str(atomic_density) + '_precRad_' + 
     str(precRad) + '_precConc_' + str(precConc) + '_excessL_' + str(interfacialExcessL) +
-    '_excessR_' + str(interfacialExcessR) + '.txt',posfile)
+    '_excessR_' + str(interfacialExcessR) + '.pos')
+
+    octave.addpath('/home/lukas/sampled_atom_probe_data')
+
+    octave.octave_script_savepos(posfile, filename)
+    
+#    np.savetxt('distributed_ref_pos_' + 'atomic_density_' + str(atomic_density) + '_precRad_' + 
+#    str(precRad) + '_precConc_' + str(precConc) + '_excessL_' + str(interfacialExcessL) +
+#    '_excessR_' + str(interfacialExcessR) + '.txt',posfile)
+
+
     
 def create_sharp_reference_data_set(number_of_precipitations, atomic_density, radius):
     
@@ -232,7 +242,7 @@ def create_sharp_reference_data_set(number_of_precipitations, atomic_density, ra
 
     octave.addpath('/home/lukas/sampled_atom_probe_data')
 
-    octave.octave_script_savepos(filename, posfile)
+    octave.octave_script_savepos(posfile, filename)
 
 
 create_sharp_reference_data_set(1, 25, 1)
