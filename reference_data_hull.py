@@ -12,6 +12,8 @@ from mpl_toolkits.mplot3d import axes3d
 from scipy.spatial import ConvexHull, Delaunay
 from matplotlib.path import Path
 from scipy.stats import norm
+from oct2py import octave
+
 
 def in_sphere(center, radius, x, y, z):
 
@@ -64,14 +66,11 @@ def generate_precipitation(pos, center=(0,0,0), radius=3):
 
     return pos
 
-def sample_prec(pos, size_of_volume):
+def sample_prec(pos, size_of_volume, precRad,precConc, interfacialExcessL, interfacialExcessR):
 
     # python adaption of the precipitation sampling from https://github.com/peterfelfer/AtomProbeTutorials    
     # for size of volume take the smallest absolute of the hull
-    precRad = 3
-    precConc = 90
-    interfacialExcessL = 25
-    interfacialExcessR = 25
+    
     segWidth = 1
     rmax = np.sqrt(3* size_of_volume**2) *1.1
     mc_matrix = 0
@@ -110,74 +109,132 @@ def sample_prec(pos, size_of_volume):
     mcPrec[isSol_indices] = mc_prec
     mcPrec[noSol_indices] = mc_matrix
 
-    posfile[:,3] = mcPrec
+    pos[:,3] = mcPrec
     
-    return posfile
+    return pos
     
-fig = pl.figure()
-ax = fig.add_subplot(111,projection='3d')
 
-# text file is only the vertices of the blender exported obj
-apt = np.genfromtxt('/home/lukas/sampled_atom_probe_data/scaled_mesh.txt')
+def create_distributed_reference_data_set(atomic_density, precRad, precConc, interfacialExcessL, interfacialExcessR):
+    
+#    fig = pl.figure()
+#    ax = fig.add_subplot(111,projection='3d')
+    
+    # text file is only the vertices of the blender exported obj
+    apt = np.genfromtxt('/home/lukas/sampled_atom_probe_data/scaled_mesh.txt')
+    
+    points = np.zeros((apt[:,1].size,3))
+    points[:,0] = apt[:,1]
+    points[:,1] = apt[:,2]
+    points[:,2] = apt[:,3]
+    
+    convex_hull = ConvexHull(points)
+    
+    # as the mesh is symmetrical take the abs of the smallest maxbounds
+    size_of_volume = np.min(convex_hull.max_bound)
+    
+    number_of_atoms = int((size_of_volume * 2)**3 * atomic_density)
+    
+    rnd_points = np.zeros((number_of_atoms,3))
+    rnd_points = generate_rnd_spatial_points(number_of_atoms, convex_hull.min_bound, convex_hull.max_bound)
+    
+    posfile = np.zeros((number_of_atoms,3))
+    
+    inside = np.where(in_hull(rnd_points, convex_hull))
+    
+    posfile = rnd_points[inside]
+    
+    # add  mass to charge column
+    
+    posfile = np.c_[posfile, np.zeros(posfile[:,0].size) ]   
+    
+    # create spherical precipitations
+    # normally distributed
+    posfile = sample_prec(posfile, size_of_volume, precRad,precConc, interfacialExcessL, interfacialExcessR)
+    
+    matrix = posfile[posfile[:,3] == 0]
+    prec = posfile[posfile[:,3] == 1]
+    
+#    n_matrix  = 4000
+#    n_prec  = 50
+#    ax.scatter(matrix[::n_matrix,0], matrix[::n_matrix,1], matrix[::n_matrix,2])
+#    ax.scatter(prec[::n_prec,0], prec[::n_prec,1], prec[::n_prec,2], color='red')
+#    for simplex in convex_hull.simplices:
+#        ax.plot(points[simplex, 0], points[simplex, 1],points[simplex, 2], 'k-', color='gray')
+#    pl.axis('equal')
+#    ax.set_axis_off()
+#    pl.show()
+    
+    np.savetxt('distributed_ref_pos_' + 'atomic_density_' + str(atomic_density) + '_precRad_' + 
+    str(precRad) + '_precConc_' + str(precConc) + '_excessL_' + str(interfacialExcessL) +
+    '_excessR_' + str(interfacialExcessR) + '.txt',posfile)
+    
+def create_sharp_reference_data_set(number_of_precipitations, atomic_density, radius):
+    
+#    fig = pl.figure()
+#    ax = fig.add_subplot(111,projection='3d')
+    
+    # text file is only the vertices of the blender exported obj
+    apt = np.genfromtxt('/home/lukas/sampled_atom_probe_data/scaled_mesh.txt')
+    
+    points = np.zeros((apt[:,1].size,3))
+    points[:,0] = apt[:,1]
+    points[:,1] = apt[:,2]
+    points[:,2] = apt[:,3]
+    
+    convex_hull = ConvexHull(points)
 
-points = np.zeros((apt[:,1].size,3))
-points[:,0] = apt[:,1]
-points[:,1] = apt[:,2]
-points[:,2] = apt[:,3]
+    # as the mesh is symmetrical take the abs of the smallest maxbounds
+    size_of_volume = np.min(convex_hull.max_bound)
+    
+    number_of_atoms = int((size_of_volume * 2)**3 * atomic_density)
+    
+    rnd_points = np.zeros((number_of_atoms,3))
+    rnd_points = generate_rnd_spatial_points(number_of_atoms, convex_hull.min_bound, convex_hull.max_bound)
+    
+    posfile = np.zeros((number_of_atoms,3))
+    
+    inside = np.where(in_hull(rnd_points, convex_hull))
+    
+    posfile = rnd_points[inside]
+    
+    # add  mass to charge column
+    
+    posfile = np.c_[posfile, np.zeros(posfile[:,0].size) ]   
 
-convex_hull = ConvexHull(points)
+    # sharp inside outside
 
-atomic_density = 25 #atoms/nm**3
-# as the mesh is symmetrical take the abs of the smallest maxbounds
-size_of_volume = np.min(convex_hull.max_bound)
+    if number_of_precipitations == 1:    
 
-number_of_atoms = int((size_of_volume * 2)**3 * atomic_density)
+        posfile = generate_precipitation(posfile, center=(0,24,0), radius=radius)
+        
+    elif number_of_precipitations == 2:
+        distance = 1
+        posfile = generate_precipitation(posfile, center=(0,24,0), radius=radius)
+    
+        posfile = generate_precipitation(posfile, center=(0,24-(2*radius)-distance ,0), radius=radius)
+    
+    matrix = posfile[posfile[:,3] == 0]
+    prec = posfile[posfile[:,3] == 1]
+    
+#    n_matrix  = 4000
+#    n_prec  = 50
+#    ax.scatter(matrix[::n_matrix,0], matrix[::n_matrix,1], matrix[::n_matrix,2])
+#    ax.scatter(prec[::n_prec,0], prec[::n_prec,1], prec[::n_prec,2], color='red')
+#    for simplex in convex_hull.simplices:
+#        ax.plot(points[simplex, 0], points[simplex, 1],points[simplex, 2], 'k-', color='gray')
+#    pl.axis('equal')
+#    ax.set_axis_off()
+#    pl.show()
+#    
 
-rnd_points = np.zeros((number_of_atoms,3))
-rnd_points = generate_rnd_spatial_points(number_of_atoms, convex_hull.min_bound, convex_hull.max_bound)
+    filename = str('sharp_ref_pos_' +'_number_of_precipitations_' + str(number_of_precipitations) +
+               '_atomic_density_'+ str(atomic_density) + '_radius_' + str(radius) + '.pos')
 
-posfile = np.zeros((number_of_atoms,3))
+    octave.addpath('/home/lukas/sampled_atom_probe_data')
 
-inside = np.where(in_hull(rnd_points, convex_hull))
-
-posfile = rnd_points[inside]
-
-mass_to_charge_matrix = 0
-mass_to_charge_precipitation = 1
-
-# add  mass to charge column
-
-posfile = np.c_[posfile, np.zeros(posfile[:,0].size) ]   
-
-# create spherical precipitations
-# normally distributed
-#posfile = sample_prec(posfile, size_of_volume)
-
-# sharp inside outside
-posfile = generate_precipitation(posfile, center=(0,24,0), radius=6)
-
-posfile = generate_precipitation(posfile, center=(0,8,0), radius=6)
-
-matrix = posfile[posfile[:,3] == 0]
-prec = posfile[posfile[:,3] == 1]
-
-n_matrix  = 5000
-n_prec  = 100
-ax.scatter(matrix[::n_matrix,0], matrix[::n_matrix,1], matrix[::n_matrix,2])
-ax.scatter(prec[::n_prec,0], prec[::n_prec,1], prec[::n_prec,2], color='red')
-for simplex in convex_hull.simplices:
-    ax.plot(points[simplex, 0], points[simplex, 1],points[simplex, 2], 'k-')
-pl.axis('equal')
-ax.set_axis_off()
-pl.show()
-
-#np.savetxt('numpy_output_pos.txt',posfile)
+    octave.octave_script_savepos(filename, posfile)
 
 
-
-
-
-
-
+create_sharp_reference_data_set(1, 25, 1)
 
 
