@@ -236,7 +236,6 @@ def create_sharp_reference_data_set(number_of_precipitations, atomic_density, ra
 #    ax.set_axis_off()
 #    pl.show()
 #    
-
     filename = str('sharp_ref_pos_' +'_number_of_precipitations_' + str(number_of_precipitations) +
                '_atomic_density_'+ str(atomic_density) + '_radius_' + str(radius) + '.pos')
 
@@ -244,7 +243,63 @@ def create_sharp_reference_data_set(number_of_precipitations, atomic_density, ra
 
     octave.octave_script_savepos(posfile, filename)
 
+# create sharp reference data
 
-create_sharp_reference_data_set(1, 25, 1)
+#sharp_atomic_densities_single = [25,50] # atoms / nm**3
+#sharp_prec_radii_single = [5,8]
+
+#for i in sharp_atomic_densities_single:
+#    for j in sharp_prec_radii_single:
+	# create_sharp_reference_data_set(number_of_precipitations, atomic_density, radius)
+#        create_sharp_reference_data_set(number_of_precipitations=1, atomic_density=i, radius=j)
+
+#sharp_atomic_densities_multiple = [25,50] # atoms / nm**3
+#sharp_prec_radii_multiple = [5,8]
+
+#for i in sharp_atomic_densities_multiple:
+#    for j in sharp_prec_radii_multiple:
+	# create_sharp_reference_data_set(number_of_precipitations, atomic_density, radius)
+#        create_sharp_reference_data_set(number_of_precipitations=2, atomic_density=i, radius=j)
+
+
+distributed_atomic_densities = [25] # atoms / nm**3
+distributed_prec_radii = [5,8]
+distributed_prec_concentrations = [25,60]
+l = 25
+
+for i in distributed_atomic_densities:
+    for j in distributed_prec_radii:
+        for k in distributed_prec_concentrations:
+	    # create_distributed_reference_data_set(atomic_density, precRad, precConc, interfacialExcessL, interfacialExcessR):
+            create_distributed_reference_data_set(atomic_density=i, precRad=j, precConc=k, interfacialExcessL=l, interfacialExcessR=l)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
