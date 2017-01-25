@@ -116,8 +116,8 @@ def sample_prec(pos, size_of_volume, precRad,precConc, interfacialExcessL, inter
 
 def create_distributed_reference_data_set(atomic_density, precRad, precConc, interfacialExcessL, interfacialExcessR):
     
-#    fig = pl.figure()
-#    ax = fig.add_subplot(111,projection='3d')
+    fig = pl.figure()
+    ax = fig.add_subplot(111,projection='3d')
     
     # text file is only the vertices of the blender exported obj
     apt = np.genfromtxt('/home/lukas/sampled_atom_probe_data/scaled_mesh.txt')
@@ -154,24 +154,24 @@ def create_distributed_reference_data_set(atomic_density, precRad, precConc, int
     matrix = posfile[posfile[:,3] == 0]
     prec = posfile[posfile[:,3] == 1]
     
-#    n_matrix  = 4000
-#    n_prec  = 50
-#    ax.scatter(matrix[::n_matrix,0], matrix[::n_matrix,1], matrix[::n_matrix,2])
-#    ax.scatter(prec[::n_prec,0], prec[::n_prec,1], prec[::n_prec,2], color='red')
-#    for simplex in convex_hull.simplices:
-#        ax.plot(points[simplex, 0], points[simplex, 1],points[simplex, 2], 'k-', color='gray')
-#    pl.axis('equal')
-#    ax.set_axis_off()
-#    pl.show()
+    n_matrix  = 4000
+    n_prec  = 50
+    ax.scatter(matrix[::n_matrix,0], matrix[::n_matrix,1], matrix[::n_matrix,2])
+    ax.scatter(prec[::n_prec,0], prec[::n_prec,1], prec[::n_prec,2], color='red')
+    for simplex in convex_hull.simplices:
+        ax.plot(points[simplex, 0], points[simplex, 1],points[simplex, 2], 'k-', color='gray')
+    pl.axis('equal')
+    ax.set_axis_off()
+    pl.show()
 
-    filename = str('sampled_pos_files/distributed_ref_pos_' + 'atomic_density_' + str(atomic_density) + '_precRad_' + 
-    str(precRad) + '_precConc_' + str(precConc) + '_excessL_' + str(interfacialExcessL) +
-    '_excessR_' + str(interfacialExcessR) + '.pos')
-
-    octave.addpath('/home/lukas/sampled_atom_probe_data')
-
-    octave.octave_script_savepos(posfile, filename)
-    
+#    filename = str('sampled_pos_files/distributed_ref_pos_' + 'atomic_density_' + str(atomic_density) + '_precRad_' + 
+#    str(precRad) + '_precConc_' + str(precConc) + '_excessL_' + str(interfacialExcessL) +
+#    '_excessR_' + str(interfacialExcessR) + '.pos')
+#
+#    octave.addpath('/home/lukas/sampled_atom_probe_data')
+#
+#    octave.octave_script_savepos(posfile, filename)
+#    
 #    np.savetxt('distributed_ref_pos_' + 'atomic_density_' + str(atomic_density) + '_precRad_' + 
 #    str(precRad) + '_precConc_' + str(precConc) + '_excessL_' + str(interfacialExcessL) +
 #    '_excessR_' + str(interfacialExcessR) + '.txt',posfile)
@@ -254,21 +254,21 @@ def create_sharp_reference_data_set(number_of_precipitations, atomic_density, ra
 #        create_sharp_reference_data_set(number_of_precipitations=1, atomic_density=i, radius=j)
 
 # multiple precs
+#        
+#sharp_atomic_densities_multiple = [100] # atoms / nm**3
+#sharp_prec_radii_multiple = [8]
+#
+#for i in sharp_atomic_densities_multiple:
+#    for j in sharp_prec_radii_multiple:
+#        #create_sharp_reference_data_set(number_of_precipitations, atomic_density, radius)
+#        create_sharp_reference_data_set(number_of_precipitations=2, atomic_density=i, radius=j)
+#
+#
+## distributed precs
         
-sharp_atomic_densities_multiple = [100] # atoms / nm**3
-sharp_prec_radii_multiple = [8]
-
-for i in sharp_atomic_densities_multiple:
-    for j in sharp_prec_radii_multiple:
-        #create_sharp_reference_data_set(number_of_precipitations, atomic_density, radius)
-        create_sharp_reference_data_set(number_of_precipitations=2, atomic_density=i, radius=j)
-
-
-# distributed precs
-        
-distributed_atomic_densities = [25,50] # atoms / nm**3
+distributed_atomic_densities = [50] # atoms / nm**3
 distributed_prec_radii = [8]
-distributed_prec_concentrations = [10,25,60,75,95]
+distributed_prec_concentrations = [75]
 l = 25
 
 for i in distributed_atomic_densities:
